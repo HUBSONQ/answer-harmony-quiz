@@ -21,6 +21,7 @@ export const OpenAIService = {
     try {
       // Check if API key is available
       const apiKey = localStorage.getItem('openai_api_key');
+      const baseURL = "https://api.aimlapi.com/v1";
       if (!apiKey) {
         throw new Error('OpenAI API key not found');
       }
@@ -28,6 +29,7 @@ export const OpenAIService = {
       // Create OpenAI client
       const openai = new OpenAI({
         apiKey,
+        baseURL,
         dangerouslyAllowBrowser: true // Required for client-side usage
       });
 
