@@ -17,6 +17,7 @@ export interface QuizState {
   totalQuestions: number;
   isQuizComplete: boolean;
   loading: boolean;
+  autoAnswerMode: boolean;
 }
 
 export type QuizAction =
@@ -25,4 +26,5 @@ export type QuizAction =
   | { type: 'NEXT_QUESTION' }
   | { type: 'RESET_QUIZ' }
   | { type: 'SET_QUESTIONS'; payload: QuizQuestion[] }
-  | { type: 'SET_LOADING'; payload: boolean };
+  | { type: 'SET_LOADING'; payload: boolean }
+  | { type: 'TOGGLE_AUTO_ANSWER' };

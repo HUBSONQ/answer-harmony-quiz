@@ -1,29 +1,30 @@
 
 import React, { useEffect } from 'react';
 import { motion } from 'framer-motion';
-import { CheckCircle2, XCircle, Clock } from 'lucide-react';
+import { CheckCircle2, XCircle, Clock, Brain } from 'lucide-react';
 import { useQuiz } from '../contexts/QuizContext';
 
 const QuizCard: React.FC = () => {
-  const { state, selectAnswer, revealAnswer, nextQuestion } = useQuiz();
+  const { state, selectAnswer, revealAnswer, nextQuestion, toggleAutoAnswer } = useQuiz();
   const { 
     questions, 
     currentQuestionIndex, 
     selectedAnswerIndex, 
     isAnswerRevealed, 
     isAnswerCorrect, 
-    isQuizComplete 
+    isQuizComplete,
+    autoAnswerMode
   } = state;
 
   const currentQuestion = questions[currentQuestionIndex];
 
   const handleAnswerClick = (index: number) => {
-    if (isAnswerRevealed) return;
+    if (isAnswerRevealed || autoAnswerMode) return;
     selectAnswer(index);
   };
 
   const handleCheckAnswer = () => {
-    if (selectedAnswerIndex === null) return;
+    if (selectedAnswerIndex === null || autoAnswerMode) return;
     revealAnswer();
   };
 
@@ -46,9 +47,22 @@ const QuizCard: React.FC = () => {
           <span className="text-sm font-medium text-primary">
             Question {currentQuestionIndex + 1}/{questions.length}
           </span>
-          <div className="flex items-center space-x-1 text-muted-foreground">
-            <Clock className="w-4 h-4" />
-            <span className="text-xs font-medium">30s</span>
+          <div className="flex items-center gap-3">
+            <div className="flex items-center space-x-1 text-muted-foreground">
+              <Clock className="w-4 h-4" />
+              <span className="text-xs font-medium">30s</span>
+            </div>
+            <button 
+              onClick={toggleAutoAnswer}
+              className={`flex items-center space-x-1 px-2 py-1 rounded-md text-xs font-medium transition-colors ${
+                autoAnswerMode 
+                  ? 'bg-primary/20 text-primary' 
+                  : 'bg-muted text-muted-foreground hover:bg-muted/80'
+              }`}
+            >
+              <Brain className="w-3 h-3 mr-1" />
+              {autoAnswerMode ? 'AI: ON' : 'AI: OFF'}
+            </button>
           </div>
         </div>
         <h3 className="text-xl font-semibold mb-1">{currentQuestion.question}</h3>
@@ -63,9 +77,9 @@ const QuizCard: React.FC = () => {
                       ${selectedAnswerIndex === index ? 'selected' : ''}
                       ${isAnswerRevealed && index === currentQuestion.correctAnswerIndex ? 'correct' : ''}
                       ${isAnswerRevealed && selectedAnswerIndex === index && index !== currentQuestion.correctAnswerIndex ? 'incorrect' : ''}`}
-            whileHover={{ scale: isAnswerRevealed ? 1 : 1.01 }}
-            whileTap={{ scale: isAnswerRevealed ? 1 : 0.99 }}
-            disabled={isAnswerRevealed}
+            whileHover={{ scale: isAnswerRevealed || autoAnswerMode ? 1 : 1.01 }}
+            whileTap={{ scale: isAnswerRevealed || autoAnswerMode ? 1 : 0.99 }}
+            disabled={isAnswerRevealed || autoAnswerMode}
           >
             <div className="flex items-center justify-between">
               <span className="flex items-center">
@@ -103,12 +117,12 @@ const QuizCard: React.FC = () => {
           <motion.button
             onClick={handleCheckAnswer}
             className={`px-6 py-2.5 rounded-lg font-medium transition-all
-                      ${selectedAnswerIndex !== null 
+                      ${selectedAnswerIndex !== null && !autoAnswerMode
                         ? 'bg-primary text-white hover:bg-primary/90'
                         : 'bg-muted text-muted-foreground cursor-not-allowed'}`}
-            whileHover={{ scale: selectedAnswerIndex !== null ? 1.02 : 1 }}
-            whileTap={{ scale: selectedAnswerIndex !== null ? 0.98 : 1 }}
-            disabled={selectedAnswerIndex === null}
+            whileHover={{ scale: selectedAnswerIndex !== null && !autoAnswerMode ? 1.02 : 1 }}
+            whileTap={{ scale: selectedAnswerIndex !== null && !autoAnswerMode ? 0.98 : 1 }}
+            disabled={selectedAnswerIndex === null || autoAnswerMode}
           >
             Check Answer
           </motion.button>

@@ -1,5 +1,5 @@
 
-import React, { createContext, useContext, useReducer, ReactNode } from 'react';
+import React, { createContext, useContext, useReducer, ReactNode, useEffect } from 'react';
 import { QuizState, QuizAction, QuizQuestion } from '../types/quiz';
 import { toast } from 'sonner';
 
@@ -13,6 +13,7 @@ const initialState: QuizState = {
   totalQuestions: 0,
   isQuizComplete: false,
   loading: false,
+  autoAnswerMode: false,
 };
 
 function quizReducer(state: QuizState, action: QuizAction): QuizState {
@@ -59,17 +60,24 @@ function quizReducer(state: QuizState, action: QuizAction): QuizState {
         ...initialState,
         questions: state.questions,
         totalQuestions: state.questions.length,
+        autoAnswerMode: state.autoAnswerMode, // Preserve auto-answer mode when resetting
       };
     case 'SET_QUESTIONS':
       return {
         ...initialState,
         questions: action.payload,
         totalQuestions: action.payload.length,
+        autoAnswerMode: state.autoAnswerMode, // Preserve auto-answer mode
       };
     case 'SET_LOADING':
       return {
         ...state,
         loading: action.payload,
+      };
+    case 'TOGGLE_AUTO_ANSWER':
+      return {
+        ...state,
+        autoAnswerMode: !state.autoAnswerMode,
       };
     default:
       return state;
@@ -83,12 +91,42 @@ interface QuizContextProps {
   nextQuestion: () => void;
   resetQuiz: () => void;
   loadQuestions: () => Promise<void>;
+  toggleAutoAnswer: () => void;
 }
 
 const QuizContext = createContext<QuizContextProps | null>(null);
 
 export const QuizProvider: React.FC<{ children: ReactNode }> = ({ children }) => {
   const [state, dispatch] = useReducer(quizReducer, initialState);
+
+  // Auto-answer effect - whenever a new question is shown in auto-answer mode
+  useEffect(() => {
+    if (state.autoAnswerMode && !state.isAnswerRevealed && state.questions.length > 0 && !state.isQuizComplete) {
+      const currentQuestion = state.questions[state.currentQuestionIndex];
+      
+      // Add a slight delay to make it look like it's "thinking"
+      const timer = setTimeout(() => {
+        // Auto-select the correct answer
+        dispatch({ type: 'SELECT_ANSWER', payload: currentQuestion.correctAnswerIndex });
+        
+        // After another short delay, reveal the answer
+        const revealTimer = setTimeout(() => {
+          dispatch({ type: 'REVEAL_ANSWER' });
+          
+          // After another delay, move to the next question
+          const nextTimer = setTimeout(() => {
+            dispatch({ type: 'NEXT_QUESTION' });
+          }, 1500);
+          
+          return () => clearTimeout(nextTimer);
+        }, 1000);
+        
+        return () => clearTimeout(revealTimer);
+      }, 1000);
+      
+      return () => clearTimeout(timer);
+    }
+  }, [state.autoAnswerMode, state.currentQuestionIndex, state.isAnswerRevealed, state.questions, state.isQuizComplete]);
 
   const selectAnswer = (index: number) => {
     dispatch({ type: 'SELECT_ANSWER', payload: index });
@@ -104,6 +142,17 @@ export const QuizProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
 
   const resetQuiz = () => {
     dispatch({ type: 'RESET_QUIZ' });
+  };
+
+  const toggleAutoAnswer = () => {
+    const newAutoAnswerMode = !state.autoAnswerMode;
+    dispatch({ type: 'TOGGLE_AUTO_ANSWER' });
+    
+    if (newAutoAnswerMode) {
+      toast.success('AI Auto-Answer mode enabled');
+    } else {
+      toast.info('AI Auto-Answer mode disabled');
+    }
   };
 
   const loadQuestions = async () => {
@@ -163,7 +212,15 @@ export const QuizProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
   };
 
   return (
-    <QuizContext.Provider value={{ state, selectAnswer, revealAnswer, nextQuestion, resetQuiz, loadQuestions }}>
+    <QuizContext.Provider value={{ 
+      state, 
+      selectAnswer, 
+      revealAnswer, 
+      nextQuestion, 
+      resetQuiz, 
+      loadQuestions,
+      toggleAutoAnswer 
+    }}>
       {children}
     </QuizContext.Provider>
   );
