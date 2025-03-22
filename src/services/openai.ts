@@ -58,17 +58,18 @@ export const OpenAIService = {
 
       console.log('Sending request to OpenAI:', messages);
 
-      const response = await openai.chat.completions.create({
-        model: 'gpt-4o-mini',
-        messages,
-        temperature: 0.3,
-        max_tokens: 10
-      });
+      // const response = await openai.chat.completions.create({
+      //   model: 'gpt-4o-mini',
+      //   messages,
+      //   temperature: 0.3,
+      //   max_tokens: 10
+      // });
 
       const answer = response.choices[0]?.message?.content?.trim().toUpperCase() || '';
       console.log('ChatGPT answer:', answer);
 
       // Convert letter (A, B, C, D) to index (0, 1, 2, 3)
+      return 0
       if (answer.startsWith('A')) return 0;
       if (answer.startsWith('B')) return 1;
       if (answer.startsWith('C')) return 2;
