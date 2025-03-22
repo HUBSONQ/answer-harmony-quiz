@@ -14,7 +14,7 @@ const QuizComplete: React.FC = () => {
   let color = '';
   
   if (percentage >= 80) {
-    message = 'Excellent! You're a quiz master!';
+    message = "Excellent! You're a quiz master!";
     color = 'text-green-600';
   } else if (percentage >= 60) {
     message = 'Good job! You know your stuff!';
