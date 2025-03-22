@@ -1,15 +1,9 @@
 
+import OpenAI from 'openai';
+
 interface OpenAIMessage {
   role: 'system' | 'user' | 'assistant';
   content: string;
-}
-
-interface OpenAIResponse {
-  choices: {
-    message: {
-      content: string;
-    };
-  }[];
 }
 
 /**
@@ -31,6 +25,12 @@ export const OpenAIService = {
         throw new Error('OpenAI API key not found');
       }
 
+      // Create OpenAI client
+      const openai = new OpenAI({
+        apiKey,
+        dangerouslyAllowBrowser: true // Required for client-side usage
+      });
+
       const messages: OpenAIMessage[] = [
         {
           role: 'system',
@@ -44,34 +44,14 @@ export const OpenAIService = {
 
       console.log('Sending request to OpenAI:', messages);
 
-      const response = await fetch('https://api.openai.com/v1/chat/completions', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          'Authorization': `Bearer ${apiKey}`
-        },
-        body: JSON.stringify({
-          model: 'gpt-4o-mini',
-          messages,
-          temperature: 0.3,
-          max_tokens: 10
-        })
+      const response = await openai.chat.completions.create({
+        model: 'gpt-4o-mini',
+        messages,
+        temperature: 0.3,
+        max_tokens: 10
       });
 
-      if (!response.ok) {
-        const error = await response.json();
-        console.error('OpenAI API error:', error);
-
-        // Check specifically for quota errors
-        if (error.error?.code === 'insufficient_quota') {
-          throw new Error('You have reached your OpenAI API usage limit. Please check your OpenAI account billing details or use a different API key.');
-        }
-        
-        throw new Error(error.error?.message || 'Error connecting to OpenAI');
-      }
-
-      const data = await response.json() as OpenAIResponse;
-      const answer = data.choices[0]?.message?.content?.trim().toUpperCase() || '';
+      const answer = response.choices[0]?.message?.content?.trim().toUpperCase() || '';
       console.log('ChatGPT answer:', answer);
 
       // Convert letter (A, B, C, D) to index (0, 1, 2, 3)
@@ -85,6 +65,16 @@ export const OpenAIService = {
       return Math.floor(Math.random() * options.length);
     } catch (error) {
       console.error('Error getting answer from ChatGPT:', error);
+      
+      // Handle quota errors
+      if (error instanceof Error) {
+        if (error.message.includes('insufficient_quota') || 
+            error.message.includes('usage limit') || 
+            error.message.includes('quota exceeded')) {
+          throw new Error('You have reached your OpenAI API usage limit. Please check your OpenAI account billing details or use a different API key.');
+        }
+      }
+      
       throw error;
     }
   }
