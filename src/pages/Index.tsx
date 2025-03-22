@@ -7,6 +7,7 @@ import QuizProgress from '../components/QuizProgress';
 import QuizComplete from '../components/QuizComplete';
 import QuizLoader from '../components/QuizLoader';
 import QuizHeader from '../components/QuizHeader';
+import OpenAIKeyInput from '../components/OpenAIKeyInput';
 
 const QuizContent = () => {
   const { state, loadQuestions } = useQuiz();
@@ -19,6 +20,10 @@ const QuizContent = () => {
   return (
     <div className="min-h-screen flex flex-col items-center justify-center p-4 md:p-8">
       <QuizHeader />
+      
+      <div className="w-full max-w-xl mx-auto mb-6">
+        <OpenAIKeyInput />
+      </div>
       
       <AnimatePresence mode="wait">
         {loading ? (

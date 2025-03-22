@@ -18,6 +18,8 @@ export interface QuizState {
   isQuizComplete: boolean;
   loading: boolean;
   autoAnswerMode: boolean;
+  aiThinking: boolean;
+  aiError: string | null;
 }
 
 export type QuizAction =
@@ -27,4 +29,6 @@ export type QuizAction =
   | { type: 'RESET_QUIZ' }
   | { type: 'SET_QUESTIONS'; payload: QuizQuestion[] }
   | { type: 'SET_LOADING'; payload: boolean }
-  | { type: 'TOGGLE_AUTO_ANSWER' };
+  | { type: 'TOGGLE_AUTO_ANSWER' }
+  | { type: 'SET_AI_THINKING'; payload: boolean }
+  | { type: 'SET_AI_ERROR'; payload: string | null };

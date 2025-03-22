@@ -1,8 +1,9 @@
 
 import React, { useEffect } from 'react';
 import { motion } from 'framer-motion';
-import { CheckCircle2, XCircle, Clock, Brain } from 'lucide-react';
+import { CheckCircle2, XCircle, Clock, Brain, AlertCircle } from 'lucide-react';
 import { useQuiz } from '../contexts/QuizContext';
+import OpenAIKeyInput from './OpenAIKeyInput';
 
 const QuizCard: React.FC = () => {
   const { state, selectAnswer, revealAnswer, nextQuestion, toggleAutoAnswer } = useQuiz();
@@ -13,7 +14,9 @@ const QuizCard: React.FC = () => {
     isAnswerRevealed, 
     isAnswerCorrect, 
     isQuizComplete,
-    autoAnswerMode
+    autoAnswerMode,
+    aiThinking,
+    aiError
   } = state;
 
   const currentQuestion = questions[currentQuestionIndex];
@@ -68,6 +71,23 @@ const QuizCard: React.FC = () => {
         <h3 className="text-xl font-semibold mb-1">{currentQuestion.question}</h3>
       </div>
 
+      {aiError && (
+        <motion.div 
+          initial={{ opacity: 0, height: 0 }}
+          animate={{ opacity: 1, height: 'auto' }}
+          className="bg-red-50 text-red-600 p-4 rounded-xl mb-4 flex items-start gap-2"
+        >
+          <AlertCircle className="w-5 h-5 mt-0.5 flex-shrink-0" />
+          <div>
+            <p className="font-medium">AI Error</p>
+            <p className="text-sm">{aiError}</p>
+            <div className="mt-2">
+              <OpenAIKeyInput />
+            </div>
+          </div>
+        </motion.div>
+      )}
+
       <div className="space-y-3 mb-6">
         {currentQuestion.options.map((option, index) => (
           <motion.button
@@ -76,10 +96,11 @@ const QuizCard: React.FC = () => {
             className={`answer-option w-full text-left p-4 rounded-xl
                       ${selectedAnswerIndex === index ? 'selected' : ''}
                       ${isAnswerRevealed && index === currentQuestion.correctAnswerIndex ? 'correct' : ''}
-                      ${isAnswerRevealed && selectedAnswerIndex === index && index !== currentQuestion.correctAnswerIndex ? 'incorrect' : ''}`}
-            whileHover={{ scale: isAnswerRevealed || autoAnswerMode ? 1 : 1.01 }}
-            whileTap={{ scale: isAnswerRevealed || autoAnswerMode ? 1 : 0.99 }}
-            disabled={isAnswerRevealed || autoAnswerMode}
+                      ${isAnswerRevealed && selectedAnswerIndex === index && index !== currentQuestion.correctAnswerIndex ? 'incorrect' : ''}
+                      ${aiThinking ? 'opacity-70 cursor-not-allowed' : ''}`}
+            whileHover={{ scale: isAnswerRevealed || autoAnswerMode || aiThinking ? 1 : 1.01 }}
+            whileTap={{ scale: isAnswerRevealed || autoAnswerMode || aiThinking ? 1 : 0.99 }}
+            disabled={isAnswerRevealed || autoAnswerMode || aiThinking}
           >
             <div className="flex items-center justify-between">
               <span className="flex items-center">
@@ -112,17 +133,24 @@ const QuizCard: React.FC = () => {
         </motion.div>
       )}
 
+      {aiThinking && (
+        <div className="flex items-center justify-center py-3 mb-6">
+          <div className="animate-spin rounded-full h-6 w-6 border-b-2 border-primary"></div>
+          <span className="ml-3 text-sm font-medium">ChatGPT is thinking...</span>
+        </div>
+      )}
+
       <div className="flex justify-end">
         {!isAnswerRevealed ? (
           <motion.button
             onClick={handleCheckAnswer}
             className={`px-6 py-2.5 rounded-lg font-medium transition-all
-                      ${selectedAnswerIndex !== null && !autoAnswerMode
+                      ${selectedAnswerIndex !== null && !autoAnswerMode && !aiThinking
                         ? 'bg-primary text-white hover:bg-primary/90'
                         : 'bg-muted text-muted-foreground cursor-not-allowed'}`}
-            whileHover={{ scale: selectedAnswerIndex !== null && !autoAnswerMode ? 1.02 : 1 }}
-            whileTap={{ scale: selectedAnswerIndex !== null && !autoAnswerMode ? 0.98 : 1 }}
-            disabled={selectedAnswerIndex === null || autoAnswerMode}
+            whileHover={{ scale: selectedAnswerIndex !== null && !autoAnswerMode && !aiThinking ? 1.02 : 1 }}
+            whileTap={{ scale: selectedAnswerIndex !== null && !autoAnswerMode && !aiThinking ? 0.98 : 1 }}
+            disabled={selectedAnswerIndex === null || autoAnswerMode || aiThinking}
           >
             Check Answer
           </motion.button>

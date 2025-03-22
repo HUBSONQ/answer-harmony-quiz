@@ -2,6 +2,7 @@
 import React, { createContext, useContext, useReducer, ReactNode, useEffect } from 'react';
 import { QuizState, QuizAction, QuizQuestion } from '../types/quiz';
 import { toast } from 'sonner';
+import { OpenAIService } from '../services/openai';
 
 const initialState: QuizState = {
   questions: [],
@@ -14,6 +15,8 @@ const initialState: QuizState = {
   isQuizComplete: false,
   loading: false,
   autoAnswerMode: false,
+  aiThinking: false,
+  aiError: null,
 };
 
 function quizReducer(state: QuizState, action: QuizAction): QuizState {
@@ -54,6 +57,7 @@ function quizReducer(state: QuizState, action: QuizAction): QuizState {
         isAnswerRevealed: false,
         isAnswerCorrect: null,
         isQuizComplete: isComplete,
+        aiError: null,
       };
     case 'RESET_QUIZ':
       return {
@@ -78,6 +82,17 @@ function quizReducer(state: QuizState, action: QuizAction): QuizState {
       return {
         ...state,
         autoAnswerMode: !state.autoAnswerMode,
+        aiError: null,
+      };
+    case 'SET_AI_THINKING':
+      return {
+        ...state,
+        aiThinking: action.payload,
+      };
+    case 'SET_AI_ERROR':
+      return {
+        ...state,
+        aiError: action.payload,
       };
     default:
       return state;
@@ -104,24 +119,53 @@ export const QuizProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
     if (state.autoAnswerMode && !state.isAnswerRevealed && state.questions.length > 0 && !state.isQuizComplete) {
       const currentQuestion = state.questions[state.currentQuestionIndex];
       
+      // Set AI thinking state to display loading indicator
+      dispatch({ type: 'SET_AI_THINKING', payload: true });
+      
+      // Ask ChatGPT for the answer
+      const getAIAnswer = async () => {
+        try {
+          // Check if we have an API key
+          const apiKey = localStorage.getItem('openai_api_key');
+          if (!apiKey) {
+            dispatch({ type: 'SET_AI_ERROR', payload: 'OpenAI API key not found' });
+            dispatch({ type: 'SET_AI_THINKING', payload: false });
+            toast.error('OpenAI API key not found. Please set your API key.');
+            return;
+          }
+          
+          // Use OpenAI to get the answer
+          const aiAnswerIndex = await OpenAIService.getAnswerForQuestion(
+            currentQuestion.question,
+            currentQuestion.options
+          );
+          
+          // Auto-select the AI's answer
+          dispatch({ type: 'SELECT_ANSWER', payload: aiAnswerIndex });
+          
+          // After a short delay, reveal the answer
+          setTimeout(() => {
+            dispatch({ type: 'REVEAL_ANSWER' });
+            
+            // After another delay, move to the next question
+            setTimeout(() => {
+              dispatch({ type: 'NEXT_QUESTION' });
+            }, 2000);
+            
+            // Reset AI thinking state
+            dispatch({ type: 'SET_AI_THINKING', payload: false });
+          }, 1000);
+        } catch (error) {
+          console.error('Error getting AI answer:', error);
+          dispatch({ type: 'SET_AI_ERROR', payload: error instanceof Error ? error.message : 'Error connecting to OpenAI' });
+          dispatch({ type: 'SET_AI_THINKING', payload: false });
+          toast.error('Failed to get answer from ChatGPT');
+        }
+      };
+      
       // Add a slight delay to make it look like it's "thinking"
       const timer = setTimeout(() => {
-        // Auto-select the correct answer
-        dispatch({ type: 'SELECT_ANSWER', payload: currentQuestion.correctAnswerIndex });
-        
-        // After another short delay, reveal the answer
-        const revealTimer = setTimeout(() => {
-          dispatch({ type: 'REVEAL_ANSWER' });
-          
-          // After another delay, move to the next question
-          const nextTimer = setTimeout(() => {
-            dispatch({ type: 'NEXT_QUESTION' });
-          }, 1500);
-          
-          return () => clearTimeout(nextTimer);
-        }, 1000);
-        
-        return () => clearTimeout(revealTimer);
+        getAIAnswer();
       }, 1000);
       
       return () => clearTimeout(timer);
