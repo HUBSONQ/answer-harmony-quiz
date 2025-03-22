@@ -5,20 +5,6 @@ interface OpenAIMessage {
   role: 'system' | 'user' | 'assistant';
   content: string;
 }
-const apiKey = localStorage.getItem('openai_api_key');
-const openai = new OpenAI({
-  apiKey,
-  dangerouslyAllowBrowser: true // Required for client-side usage
-});
-
-const completion = await openai.chat.completions.create({
-  model: "gpt-4o",
-  messages: [{
-      role: "user",
-      content: "Write a one-sentence bedtime story about a unicorn.",
-  }],
-});
-console.log(completion.choices[0].message.content);
 
 /**
  * Service for interacting with the OpenAI API
@@ -58,18 +44,17 @@ export const OpenAIService = {
 
       console.log('Sending request to OpenAI:', messages);
 
-      // const response = await openai.chat.completions.create({
-      //   model: 'gpt-4o-mini',
-      //   messages,
-      //   temperature: 0.3,
-      //   max_tokens: 10
-      // });
+      const response = await openai.chat.completions.create({
+        model: 'gpt-4o-mini',
+        messages,
+        temperature: 0.3,
+        max_tokens: 10
+      });
 
       const answer = response.choices[0]?.message?.content?.trim().toUpperCase() || '';
       console.log('ChatGPT answer:', answer);
 
       // Convert letter (A, B, C, D) to index (0, 1, 2, 3)
-      return 0
       if (answer.startsWith('A')) return 0;
       if (answer.startsWith('B')) return 1;
       if (answer.startsWith('C')) return 2;
