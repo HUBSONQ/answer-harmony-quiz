@@ -1,0 +1,130 @@
+
+import React, { useEffect } from 'react';
+import { motion } from 'framer-motion';
+import { CheckCircle2, XCircle, Clock } from 'lucide-react';
+import { useQuiz } from '../contexts/QuizContext';
+
+const QuizCard: React.FC = () => {
+  const { state, selectAnswer, revealAnswer, nextQuestion } = useQuiz();
+  const { 
+    questions, 
+    currentQuestionIndex, 
+    selectedAnswerIndex, 
+    isAnswerRevealed, 
+    isAnswerCorrect, 
+    isQuizComplete 
+  } = state;
+
+  const currentQuestion = questions[currentQuestionIndex];
+
+  const handleAnswerClick = (index: number) => {
+    if (isAnswerRevealed) return;
+    selectAnswer(index);
+  };
+
+  const handleCheckAnswer = () => {
+    if (selectedAnswerIndex === null) return;
+    revealAnswer();
+  };
+
+  const handleNextQuestion = () => {
+    nextQuestion();
+  };
+
+  if (!currentQuestion || isQuizComplete) return null;
+
+  return (
+    <motion.div
+      initial={{ opacity: 0, y: 20 }}
+      animate={{ opacity: 1, y: 0 }}
+      exit={{ opacity: 0, y: -20 }}
+      transition={{ duration: 0.5 }}
+      className="glass-morphism rounded-2xl p-6 w-full max-w-xl mx-auto"
+    >
+      <div className="mb-6">
+        <div className="flex justify-between items-center mb-4">
+          <span className="text-sm font-medium text-primary">
+            Question {currentQuestionIndex + 1}/{questions.length}
+          </span>
+          <div className="flex items-center space-x-1 text-muted-foreground">
+            <Clock className="w-4 h-4" />
+            <span className="text-xs font-medium">30s</span>
+          </div>
+        </div>
+        <h3 className="text-xl font-semibold mb-1">{currentQuestion.question}</h3>
+      </div>
+
+      <div className="space-y-3 mb-6">
+        {currentQuestion.options.map((option, index) => (
+          <motion.button
+            key={index}
+            onClick={() => handleAnswerClick(index)}
+            className={`answer-option w-full text-left p-4 rounded-xl
+                      ${selectedAnswerIndex === index ? 'selected' : ''}
+                      ${isAnswerRevealed && index === currentQuestion.correctAnswerIndex ? 'correct' : ''}
+                      ${isAnswerRevealed && selectedAnswerIndex === index && index !== currentQuestion.correctAnswerIndex ? 'incorrect' : ''}`}
+            whileHover={{ scale: isAnswerRevealed ? 1 : 1.01 }}
+            whileTap={{ scale: isAnswerRevealed ? 1 : 0.99 }}
+            disabled={isAnswerRevealed}
+          >
+            <div className="flex items-center justify-between">
+              <span className="flex items-center">
+                <span className="inline-flex justify-center items-center w-6 h-6 rounded-full bg-primary/10 text-primary text-sm font-medium mr-3">
+                  {String.fromCharCode(65 + index)}
+                </span>
+                {option}
+              </span>
+
+              {isAnswerRevealed && index === currentQuestion.correctAnswerIndex && (
+                <CheckCircle2 className="h-5 w-5 text-green-600" />
+              )}
+              
+              {isAnswerRevealed && selectedAnswerIndex === index && index !== currentQuestion.correctAnswerIndex && (
+                <XCircle className="h-5 w-5 text-red-600" />
+              )}
+            </div>
+          </motion.button>
+        ))}
+      </div>
+
+      {isAnswerRevealed && currentQuestion.explanation && (
+        <motion.div 
+          initial={{ opacity: 0, height: 0 }}
+          animate={{ opacity: 1, height: 'auto' }}
+          className="bg-accent p-4 rounded-xl mb-6"
+        >
+          <h4 className="font-medium mb-1">Explanation:</h4>
+          <p className="text-muted-foreground text-sm">{currentQuestion.explanation}</p>
+        </motion.div>
+      )}
+
+      <div className="flex justify-end">
+        {!isAnswerRevealed ? (
+          <motion.button
+            onClick={handleCheckAnswer}
+            className={`px-6 py-2.5 rounded-lg font-medium transition-all
+                      ${selectedAnswerIndex !== null 
+                        ? 'bg-primary text-white hover:bg-primary/90'
+                        : 'bg-muted text-muted-foreground cursor-not-allowed'}`}
+            whileHover={{ scale: selectedAnswerIndex !== null ? 1.02 : 1 }}
+            whileTap={{ scale: selectedAnswerIndex !== null ? 0.98 : 1 }}
+            disabled={selectedAnswerIndex === null}
+          >
+            Check Answer
+          </motion.button>
+        ) : (
+          <motion.button
+            onClick={handleNextQuestion}
+            className="bg-primary text-white px-6 py-2.5 rounded-lg font-medium hover:bg-primary/90 transition-all"
+            whileHover={{ scale: 1.02 }}
+            whileTap={{ scale: 0.98 }}
+          >
+            Next Question
+          </motion.button>
+        )}
+      </div>
+    </motion.div>
+  );
+};
+
+export default QuizCard;
