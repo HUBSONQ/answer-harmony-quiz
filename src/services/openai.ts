@@ -5,6 +5,20 @@ interface OpenAIMessage {
   role: 'system' | 'user' | 'assistant';
   content: string;
 }
+const apiKey = localStorage.getItem('openai_api_key');
+const openai = new OpenAI({
+  apiKey,
+  dangerouslyAllowBrowser: true // Required for client-side usage
+});
+
+const completion = await openai.chat.completions.create({
+  model: "gpt-4o",
+  messages: [{
+      role: "user",
+      content: "Write a one-sentence bedtime story about a unicorn.",
+  }],
+});
+console.log(completion.choices[0].message.content);
 
 /**
  * Service for interacting with the OpenAI API
