@@ -37,6 +37,9 @@ const QuizCard: React.FC = () => {
 
   if (!currentQuestion || isQuizComplete) return null;
 
+  // Determine if the error is related to quota limits
+  const isQuotaError = aiError?.includes('usage limit') || aiError?.includes('quota');
+
   return (
     <motion.div
       initial={{ opacity: 0, y: 20 }}
@@ -75,11 +78,11 @@ const QuizCard: React.FC = () => {
         <motion.div 
           initial={{ opacity: 0, height: 0 }}
           animate={{ opacity: 1, height: 'auto' }}
-          className="bg-red-50 text-red-600 p-4 rounded-xl mb-4 flex items-start gap-2"
+          className={`${isQuotaError ? 'bg-red-50 text-red-600' : 'bg-amber-50 text-amber-600'} p-4 rounded-xl mb-4 flex items-start gap-2`}
         >
           <AlertCircle className="w-5 h-5 mt-0.5 flex-shrink-0" />
           <div>
-            <p className="font-medium">AI Error</p>
+            <p className="font-medium">{isQuotaError ? 'API Quota Exceeded' : 'AI Error'}</p>
             <p className="text-sm">{aiError}</p>
             <div className="mt-2">
               <OpenAIKeyInput />

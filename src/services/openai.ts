@@ -61,6 +61,12 @@ export const OpenAIService = {
       if (!response.ok) {
         const error = await response.json();
         console.error('OpenAI API error:', error);
+
+        // Check specifically for quota errors
+        if (error.error?.code === 'insufficient_quota') {
+          throw new Error('You have reached your OpenAI API usage limit. Please check your OpenAI account billing details or use a different API key.');
+        }
+        
         throw new Error(error.error?.message || 'Error connecting to OpenAI');
       }
 
