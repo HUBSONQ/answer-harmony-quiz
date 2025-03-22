@@ -28,10 +28,6 @@ const OpenAIKeyInput: React.FC = () => {
     }
 
     // Simple validation to check if it looks like an OpenAI key
-    if (!apiKey.startsWith('sk-')) {
-      toast.error('Please enter a valid OpenAI API key (should start with sk-)');
-      return;
-    }
 
     // Store API key in localStorage (Note: In a production app, you'd want to store this more securely)
     localStorage.setItem('openai_api_key', apiKey);
